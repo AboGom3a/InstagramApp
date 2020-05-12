@@ -122,10 +122,11 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
                 User userObject = dataSnapshot.getValue(User.class);
                 tvName.setText(userObject.getName());
                 tvEmail.setText(userObject.getEmail());
-               Picasso.get()
+              /* Picasso.get()
                         .load(userObject.getImage())
                         .placeholder(R.drawable.img_placeholder)
                         .into(imgProfile);
+                 */
 
             }
 
@@ -144,10 +145,10 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
                 startActivity(new Intent(getActivity(), SplashActivity.class));
                 break;
             case R.id.btn_add_image:
-                saveImage();
+                //saveImage();
                 break;
             case R.id.btn_edit:
-                checkAccessImagesPermission();
+               // checkAccessImagesPermission();
                 break;
         }
     }
