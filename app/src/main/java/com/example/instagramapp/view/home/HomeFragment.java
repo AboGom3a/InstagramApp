@@ -54,7 +54,6 @@ public class HomeFragment extends Fragment  implements OnLikeClicked {
         // Inflate the layout for this fragment
         View view;
         view = inflater.inflate(R.layout.fragment_home, container, false);
-        ;
         setupView(view);
         getPosts();
         return view;

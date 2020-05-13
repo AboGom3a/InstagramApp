@@ -34,7 +34,6 @@
         android:text="LogOut"
         android:textAllCaps="false"
         app:layout_constraintEnd_toEndOf="@id/guideline_end"
-        app:layout_constraintStart_toEndOf="@+id/instagram_logo"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -45,14 +44,11 @@
         android:layout_marginTop="16dp"
         android:layout_marginLeft="16sp"
         android:layout_marginRight="16sp"
-        android:textSize="25sp"
+        android:textSize="16sp"
         android:textColor="#000"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif-condensed-light"
         android:textAlignment="center"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btn_logout"
-        app:layout_constraintStart_toStartOf="@+id/guideline_start" />
+        app:layout_constraintStart_toStartOf="parent" />
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/profile_image"
         android:layout_width="150dp"
@@ -102,7 +98,7 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toBottomOf="@+id/tv_name" />
-    <TextView
+   <!-- <TextView
         android:id="@+id/tv_description"
         android:layout_width="0sp"
         android:layout_height="wrap_content"
@@ -111,7 +107,7 @@
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
-        app:layout_constraintTop_toBottomOf="@+id/tv_Email" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_Email" />  -->
     <Button
         android:id="@+id/btn_edit"
         android:layout_width="0dp"
@@ -122,9 +118,9 @@
         android:textAllCaps="false"
         app:layout_constraintEnd_toEndOf="@id/guideline_end"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
-        app:layout_constraintTop_toBottomOf="@id/tv_description" />
+        app:layout_constraintTop_toBottomOf="@id/tv_Email" />
 
-
+<!--
     <LinearLayout
         android:id="@+id/Lineer_num"
         android:layout_width="0dp"
@@ -206,5 +202,14 @@
             android:textAlignment="center"
             android:textSize="16sp"
             android:textStyle="bold"/>
-    </LinearLayout>
+    </LinearLayout> -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView_user_posts"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guideline_end"
+        app:layout_constraintStart_toStartOf="@id/guideline_start"
+        app:layout_constraintTop_toBottomOf="@id/btn_edit"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

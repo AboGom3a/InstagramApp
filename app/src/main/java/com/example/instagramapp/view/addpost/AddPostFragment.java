@@ -98,7 +98,6 @@ public class AddPostFragment extends Fragment implements View.OnClickListener {
     public void onClick(View v) {
         // TODO: Add Post
         savePost();
-        navController.popBackStack();
     }
 
     private void savePost() {
@@ -133,6 +132,7 @@ public class AddPostFragment extends Fragment implements View.OnClickListener {
         String id = myRef.push().getKey();
         myRef.child(id).setValue(post);
         Toast.makeText(getActivity(), "Post added!", Toast.LENGTH_SHORT).show();
+        navController.popBackStack();
 
     }
 

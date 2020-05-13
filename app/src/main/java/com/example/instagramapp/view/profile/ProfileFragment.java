@@ -15,6 +15,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,8 +32,10 @@ import android.widget.Toast;
 import com.example.instagramapp.R;
 import com.example.instagramapp.model.Post;
 import com.example.instagramapp.model.User;
+import com.example.instagramapp.utils.OnLikeClicked;
 import com.example.instagramapp.utils.Utilities;
 import com.example.instagramapp.view.auth.LoginActivity;
+import com.example.instagramapp.view.home.post.PostAdapter;
 import com.example.instagramapp.view.splash.SplashActivity;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,6 +44,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -47,6 +53,9 @@ import com.squareup.picasso.Picasso;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -56,7 +65,7 @@ import static android.app.Activity.RESULT_OK;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ProfileFragment extends Fragment implements View.OnClickListener {
+public class ProfileFragment extends Fragment implements View.OnClickListener , OnLikeClicked {
     private ImageView imgProfile;
     private TextView tvName;
     private TextView tvEmail;
@@ -64,6 +73,12 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
     private ImageButton addimage;
     private Uri imageUri;
     private Bitmap selectedImage;
+
+    private RecyclerView recyclerView_postOfUser;
+    private String userid;
+    private ArrayList<Post> arrposts;
+    //  Query query;
+    private PostAdapter userpostAdapter;
 
     private static final int GALLERY_PICK = 100;
     private static final int GALLERY_PERMISSION = 200;
@@ -74,7 +89,7 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
     private DatabaseReference myRef;
     private FirebaseAuth mAuth;
     private FirebaseUser user;
-    private NavController navController;
+    Query UPquery;
 
 
     public ProfileFragment() {
@@ -94,8 +109,9 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        navController = Navigation.findNavController(view);
         setupView(view);
+        getUserInfo();
+        getUserPosts();
     }
 
     private void setupView(View view) {
@@ -106,6 +122,13 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
         addimage = view.findViewById(R.id.btn_add_image);
         checkimg = view.findViewById(R.id.btn_edit);
 
+        recyclerView_postOfUser = view.findViewById(R.id.recyclerView_user_posts);
+        arrposts = new ArrayList<>();
+        userpostAdapter = new PostAdapter(ProfileFragment.this, arrposts);
+        //recyclerView_postOfUser.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerView_postOfUser.setLayoutManager(new GridLayoutManager(getActivity(),2));
+        recyclerView_postOfUser.setAdapter(userpostAdapter);
+
 
         btnLogOut.setOnClickListener(this);
         addimage.setOnClickListener(this);
@@ -115,18 +138,27 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
         user = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         database = FirebaseDatabase.getInstance();
+        //UPRef = database.getReference("Posts");
+       UPquery = database.getReference("Posts")
+                .orderByChild("userId")
+                .equalTo(user.getUid());
+
+
+    }
+    private void getUserInfo(){
         myRef = database.getReference("Users").child(user.getUid());
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 User userObject = dataSnapshot.getValue(User.class);
+                assert userObject != null;
                 tvName.setText(userObject.getName());
                 tvEmail.setText(userObject.getEmail());
-              /* Picasso.get()
+                Picasso.get()
                         .load(userObject.getImage())
                         .placeholder(R.drawable.img_placeholder)
                         .into(imgProfile);
-                 */
+
 
             }
 
@@ -145,10 +177,10 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
                 startActivity(new Intent(getActivity(), SplashActivity.class));
                 break;
             case R.id.btn_add_image:
-                //saveImage();
+                saveImage();
                 break;
             case R.id.btn_edit:
-               // checkAccessImagesPermission();
+                checkAccessImagesPermission();
                 break;
         }
     }
@@ -156,10 +188,10 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
     private void saveImage() {
         final String imagePath = UUID.randomUUID().toString() + ".jpg";
 
-        mStorageRef.child("postImages").child(imagePath).putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+        mStorageRef.child("userImages").child(imagePath).putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                mStorageRef.child("postImages").child(imagePath).getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                mStorageRef.child("userImages").child(imagePath).getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
                     public void onSuccess(Uri uri) {
                         String imageURL = uri.toString();
@@ -176,10 +208,50 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
 
     private void saveImageToDB(String id,User user) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("Users").child(id).child("image");
+        DatabaseReference myRef = database.getReference("Users").child(id);
+        Map<String, Object> updates = new HashMap<String,Object>();
+        updates.put("image", user);
+        myRef.updateChildren(updates);
 
-        myRef.setValue(user);
+//        myRef.setValue(updates);
         Toast.makeText(getActivity(), "image added!", Toast.LENGTH_SHORT).show();
+
+    }
+
+    private void getUserPosts(){
+        UPquery.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    String id = snapshot.getKey();
+                    final Post post = snapshot.getValue(Post.class);
+                    post.setId(id);
+                    DatabaseReference usersRef = database.getReference("Users").child(post.getUserId());
+                    usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            User user = dataSnapshot.getValue(User.class);
+                            post.setUser(user);
+                            arrposts.add(post);
+                            userpostAdapter.notifyDataSetChanged();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+
+            }
+        });
 
     }
 
@@ -230,5 +302,10 @@ public class ProfileFragment extends Fragment implements View.OnClickListener {
         } else {
             Toast.makeText(getActivity(), "you_havent_picked_image", Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    public void onLikeClicked(int position) {
+
     }
 }
